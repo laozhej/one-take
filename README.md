@@ -1,5 +1,9 @@
 # ONE TAKE
 
+[![ONE TAKE: four pixel agents watching a screen that shows them watching it](film/cover/one-take-cover-1920.jpg)](https://github.com/laozhej/one-take/releases/tag/v1.0.0)
+
+**[▶ Download the film](https://github.com/laozhej/one-take/releases/download/v1.0.0/film-upload.mp4)** (MP4, 1080p, 64 s)
+
 A 64-second film in a single continuous shot, with no cuts and a seamless loop, made entirely in code. It is one HTML page: Canvas 2D for the picture and Web Audio for the score. There are no image or audio files.
 
 Claude Code's orange pixel character is the mouse cursor. It wakes at dawn, kicks the pointer into the Trash and types *"Make a video — and you're the protagonist."* Then:
@@ -49,14 +53,16 @@ Keys: click or Space to play or pause, F for fullscreen.
 | shots / cuts | 1 / 0 |
 | tempo | 120 BPM · 32 bars · 128 beats |
 | score | 693 notes · 3,072,000 samples at 48 kHz |
-| source | about 1,380 lines · about 99 KB of JavaScript |
+| source | 1,383 lines · 99.1 KB of JavaScript, as rendered for v1.0.0 (the page counts itself live, so later edits change these) |
 | assets | 0 images · 0 audio files |
 
 ## Files
 
 - `film/index.html`: the film, a single page.
 - `film/FILM.md`: the director's treatment and the build notes.
+- `film/cover/one-take-cover-1920.jpg`: the cover. It's drawn by the film's own engine: `window.__film.cover(t, zoom)` renders the 47.4 s frame zoomed into the Droste tunnel, and adds the four agents seen from behind and the title.
 - `PROMPTS.md`: the prompts that made it.
+- `tools/cover.mjs`: captures the cover at 2× in headless Chrome and scales it to 1920×1080. Usage: `node tools/cover.mjs film/index.html out.png 47.4 2.2`.
 - `tools/`: the checks used while making it:
   - `seam.py`: frame-to-frame change across a loop point;
   - `audiocheck.mjs`: the audio loop seam and section levels;

@@ -277,8 +277,8 @@ function drawClawd(g, p) {
       R(c, 8, 1, lifted(c) ? 1 : 2);
     }
   }
-  g.fillStyle = C.clay; g.fill();
-  g.beginPath(); R(3, 0, 12, 1); g.fillStyle = 'rgba(255,236,222,0.24)'; g.fill();
+  g.fillStyle = p.color || C.clay; g.fill();
+  g.beginPath(); R(3, 0, 12, 1); g.fillStyle = p.rim ? 'rgba(255,224,190,0.85)' : 'rgba(255,236,222,0.24)'; g.fill();
   g.beginPath(); R(3, 7, 12, 1); g.fillStyle = 'rgba(90,30,10,0.16)'; g.fill();
   const acc = p.acc;
   if (acc === 'hat') {
@@ -288,10 +288,13 @@ function drawClawd(g, p) {
     g.beginPath(); R(4, -2, 10, 1); R(3, -1, 1, 1); R(14, -1, 1, 1); R(2, 0, 2, 4); R(14, 0, 2, 4); g.fillStyle = '#2B2522'; g.fill();
   } else if (acc === 'beret') {
     g.beginPath(); R(3, -1, 12, 1); R(4, -2, 11, 1); R(6, -3, 7, 1); R(11, -4, 1, 1); g.fillStyle = C.dusk; g.fill();
+  } else if (acc === 'glasses' && p.back) {
+    g.beginPath(); R(3, 2, 12, 1); g.fillStyle = '#2B2522'; g.fill();
   } else if (acc === 'glasses') {
     g.beginPath(); R(3, 1, 12, 1); g.fillStyle = '#2B2522'; g.fill();
     g.beginPath(); R(4, 2, 3, 2); R(11, 2, 3, 2); g.fillStyle = '#DCEBEE'; g.fill();
   }
+  if (p.back) { g.restore(); return; }                     // seen from behind: no face
   const lk = Math.round(clamp(p.look || 0, -1, 1));
   g.beginPath();
   if (p.eyes === 'closed') { R(4.6 + lk, 3, 1.8, 0.6); R(11.6 + lk, 3, 1.8, 0.6); }
@@ -1339,10 +1342,41 @@ function seek(t) {
   ctx.drawImage(VIGNETTE, 0, 0, W, H);
 }
 
+// ─── cover: the four, from behind, watching a screen that shows them watching ──
+function drawCover(g, tc = 47.4, Z = 2.2) {
+  const F = droste(tc), cam = { cx: DC[0] + (960 - DC[0]) / Z, cy: DC[1] + (540 - DC[1]) / Z, z: Z, rot: 0 };
+  drawWorld(g, tc, cam, 0, (gg, x, y, w, h) => gg.drawImage(F.c, x, y, w, h), false);
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1;
+  const top = g.createLinearGradient(0, 0, 0, 430); top.addColorStop(0, 'rgba(24,14,10,.82)'); top.addColorStop(0.55, 'rgba(24,14,10,.45)'); top.addColorStop(1, 'rgba(24,14,10,0)');
+  g.fillStyle = top; g.fillRect(0, 0, W, 430);
+  const bot = g.createLinearGradient(0, 800, 0, H); bot.addColorStop(0, 'rgba(24,14,10,0)'); bot.addColorStop(0.5, 'rgba(24,14,10,.86)'); bot.addColorStop(1, 'rgba(24,14,10,.98)');
+  g.fillStyle = bot; g.fillRect(0, 800, W, H - 800);
+  g.drawImage(VIGNETTE, 0, 0, W, H);
+  // the title, in the film's block letters
+  const B = 21, x0 = 960 - (8 * 6 - 1) * B / 2, y0 = 36;
+  for (const pass of [0, 1, 2]) {
+    g.fillStyle = pass === 0 ? 'rgba(10,6,4,.55)' : pass === 1 ? C.clayDark : C.clay; g.beginPath();
+    for (let gI = 0; gI < 8; gI++) GLYPH[TITLE[gI]].forEach((row, ry) => { for (let cx = 0; cx < 5; cx++) if (row[cx] === '#') {
+      const o = pass === 0 ? 8 : pass === 1 ? 4 : 0;
+      g.rect(x0 + (gI * 6 + cx) * B + o, y0 + ry * B + o * 1.2, B + 0.5, B + 0.5);
+    } });
+    g.fill();
+  }
+  g.save(); g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 14;
+  txt(g, '64 seconds · one shot · zero cuts', 960, y0 + 7 * B + 50, `700 34px ${MONO}`, '#FBF3E6', 'center');
+  g.restore();
+  // the audience: backlit by the screen
+  [[585, 'hat'], [835, 'glasses'], [1085, 'phones'], [1335, 'beret']].forEach(([x, acc], i) => {
+    g.save(); g.translate(x, 1080 + (i % 2) * 6); g.scale(3.9, 3.9);
+    drawClawd(g, { x: 0, y: 0, sit: 1, back: true, acc, rim: true, color: '#B8603F', shadow: false, rot: (i - 1.5) * 0.02 });
+    g.restore();
+  });
+}
 // ─── build everything once, then the film is ready ──────────────────────────
 const SHOTS = [{ id: 'one-take', start: 0, end: DURATION, readAt: 9, action: 'one continuous camera move; first frame = last frame' }];
 const MARKS = [T.kick, T.enter, T.split, T.march0, T.render, T.lift1, T.drop, T.push0, T.merge, T.title0, T.putBack];
-window.__film = { duration: DURATION, ready: false, seek, shots: SHOTS, marks: MARKS, wav: async () => wavB64() };
+window.__film = { duration: DURATION, ready: false, seek, shots: SHOTS, marks: MARKS, wav: async () => wavB64(),
+  cover: (t, Z) => { ctx.setTransform(1, 0, 0, 1, 0, 0); drawCover(ctx, t, Z); return true; } };
 window.__initLog = [];
 const mark = s => window.__initLog.push([s, Math.round(performance.now())]);
 (async () => {

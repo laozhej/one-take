@@ -8,3 +8,6 @@ film/render.log
 # local-only debugging helpers (they import tools from a local skill install)
 tools/probe.html
 tools/initlog.mjs
+# local cover exports (the README uses film/cover/one-take-cover-1920.jpg)
+film/cover/*.png
+film/cover/*-1280.jpg
