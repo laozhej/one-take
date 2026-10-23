@@ -1,0 +1,10 @@
+.DS_Store
+# rendered outputs (large, regenerated from the source)
+film/*.mp4
+film/*.wav
+film/mix.*
+film/stills/
+film/render.log
+# local-only debugging helpers (they import tools from a local skill install)
+tools/probe.html
+tools/initlog.mjs
